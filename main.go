@@ -57,8 +57,11 @@ func (app *App) Initialize() error {
 
 	app.interval = config.GlobalConfig.CheckInterval
 
-	if err := app.initHttpServer(); err != nil {
-		return fmt.Errorf("初始化HTTP服务器失败: %w", err)
+	//保存方式为local时，初始化HTTP服务器
+	if config.GlobalConfig.SaveMethod == "local" {
+		if err := app.initHttpServer(); err != nil {
+			return fmt.Errorf("初始化HTTP服务器失败: %w", err)
+		}
 	}
 
 	return nil
