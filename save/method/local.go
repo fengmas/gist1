@@ -6,13 +6,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/beck-8/subs-check/config"
 	"github.com/beck-8/subs-check/utils"
 )
 
 const (
-	outputDirName = "output"
-	fileMode      = 0644
-	dirMode       = 0755
+	fileMode = 0644
+	dirMode  = 0755
 )
 
 // LocalSaver 处理本地文件保存的结构体
@@ -28,7 +28,13 @@ func NewLocalSaver() (*LocalSaver, error) {
 		return nil, fmt.Errorf("获取可执行文件路径失败")
 	}
 
-	outputPath := filepath.Join(basePath, outputDirName)
+	outputPath := "output"
+	if config.GlobalConfig.LocalPath != "" {
+		outputPath = config.GlobalConfig.LocalPath
+	} else {
+		outputPath = filepath.Join(basePath, outputPath)
+	}
+
 	return &LocalSaver{
 		BasePath:   basePath,
 		OutputPath: outputPath,

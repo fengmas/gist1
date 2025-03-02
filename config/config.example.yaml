@@ -40,6 +40,11 @@ mihomo-api-secret: ""
 # 目前支持的保存方法: r2, local, gist, webdav
 save-method: local
 
+# local文件输出目录，为空则输出到当前程序所在目录下的output目录
+# windows 示例: "C:\\Users\\name\\subs-check\\temp"
+# linux 示例: "/root/subs-check/temp"
+local-output-path: ""
+
 # webdav
 webdav-url: "https://example.com/dav/"
 webdav-username: "admin"
