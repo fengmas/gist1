@@ -25,6 +25,7 @@ type Config struct {
 	SubUrls         []string `yaml:"sub-urls"`
 	MihomoApiUrl    string   `yaml:"mihomo-api-url"`
 	MihomoApiSecret string   `yaml:"mihomo-api-secret"`
+	HttpServer      bool     `yaml:"http-server"`
 	ListenPort      string   `yaml:"listen-port"`
 	RenameNode      bool     `yaml:"rename-node"`
 	ProxyType       string   `yaml:"proxy-type"`

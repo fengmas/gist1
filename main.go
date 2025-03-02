@@ -57,15 +57,15 @@ func (app *App) Initialize() error {
 
 	app.interval = config.GlobalConfig.CheckInterval
 
-	//保存方式为local时，初始化HTTP服务器
-	if config.GlobalConfig.SaveMethod == "local" {
+	// 初始化HTTP服务器
+	if config.GlobalConfig.HttpServer {
 		if err := app.initHttpServer(); err != nil {
 			return fmt.Errorf("初始化HTTP服务器失败: %w", err)
 		}
 	}
 
 	if config.GlobalConfig.ProxyType != "" && config.GlobalConfig.ProxyUrl != "" {
-		slog.Info("已启用" + config.GlobalConfig.ProxyUrl + "代理 ")
+		slog.Info("已启用" + config.GlobalConfig.ProxyType + "代理 ")
 	} else {
 		slog.Info("未启用代理")
 	}
@@ -185,7 +185,12 @@ func (app *App) initHttpServer() error {
 	if err != nil {
 		return fmt.Errorf("获取http监听目录失败: %w", err)
 	}
-	router.Static("/", saver.OutputPath)
+	router.Static("/sub", saver.OutputPath)
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Http 服务已启动 !",
+		})
+	})
 	go func() {
 		if err := router.Run(port); err != nil {
 			slog.Error(fmt.Sprintf("HTTP服务器启动失败: %v", err))

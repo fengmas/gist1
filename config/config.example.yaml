@@ -21,9 +21,12 @@ min-speed: 1024
 # 下载测试时间(s)(与下载链接大小相关，默认最大测试10s)
 download-timeout: 10
 
+# 是否启用http服务 默认为启动ture
+http-server: true
+
 # 监听端口，用于直接返回节点信息，方便订阅转换
 # HTTP服务监听端口，请自行修改,留空则使用默认8199端口
-# Example: http://127.0.0.1:8199/all.yaml
+# Example: http://127.0.0.1:8199/sub/all.yaml
 listen-port: ""
 
 # 以节点IP查询位置重命名节点
