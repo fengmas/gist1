@@ -28,10 +28,7 @@ type Config struct {
 	RenameNode      bool     `yaml:"rename-node"`
 }
 
-var GlobalConfig = &Config{
-	// 新增配置，给未更改配置文件的用户一个默认值
-	ListenPort: ":8199",
-}
+var GlobalConfig = &Config{}
 
 //go:embed config.example.yaml
 var DefaultConfigTemplate []byte

@@ -169,6 +169,10 @@ func (app *App) initConfigWatcher() error {
 
 // initHttpServer 初始化HTTP服务器
 func (app *App) initHttpServer() error {
+	port := ":8199" // 默认端口
+	if config.GlobalConfig.ListenPort != "" {
+		port = ":" + config.GlobalConfig.ListenPort
+	}
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	saver, err := method.NewLocalSaver()
@@ -177,11 +181,11 @@ func (app *App) initHttpServer() error {
 	}
 	router.Static("/", saver.OutputPath)
 	go func() {
-		if err := router.Run(config.GlobalConfig.ListenPort); err != nil {
+		if err := router.Run(port); err != nil {
 			slog.Error(fmt.Sprintf("HTTP服务器启动失败: %v", err))
 		}
 	}()
-	slog.Info(fmt.Sprintf("HTTP服务器已启动 %s", config.GlobalConfig.ListenPort))
+	slog.Info(fmt.Sprintf("HTTP服务器已启动 %s", port))
 	return nil
 }
 
