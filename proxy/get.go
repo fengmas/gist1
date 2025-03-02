@@ -12,6 +12,7 @@ import (
 
 	"github.com/beck-8/subs-check/config"
 	"github.com/beck-8/subs-check/proxy/parser"
+	"github.com/beck-8/subs-check/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -81,7 +82,13 @@ func GetDateFromSubs(subUrl string) ([]byte, error) {
 	maxRetries := config.GlobalConfig.SubUrlsReTry
 	var lastErr error
 
-	client := &http.Client{}
+	// 如果已配置代理，那么使用代理客户端请求
+	var client *http.Client
+	if config.GlobalConfig.ProxyType != "" && config.GlobalConfig.ProxyUrl != "" {
+		client = utils.ProxyHTTPClient()
+	} else {
+		client = &http.Client{}
+	}
 
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {

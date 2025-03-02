@@ -68,6 +68,13 @@ worker-token: 1234567890
 # 重试次数(获取订阅失败后重试次数)
 sub-urls-retry: 3
 
+# 是否使用代理下载订阅节点和上传gist使用代理,支持http/socks5，不使用代理请留空 
+proxy-type: ""
+# 代理地址，填写规则如下
+# 无需认证代理：http://host:port 或 socks5://host:port
+# 需要认证代理：http://username:password@host:prot 或 socks5://username:password@host:prot 
+proxy-url: ""
+
 # 订阅地址 支持 clash/mihomo/v2ray/base64 格式的订阅链接
 # 如果用户想使用clash类型，那可以在支持的订阅链接结尾加上 &flag=clash.meta
 sub-urls:

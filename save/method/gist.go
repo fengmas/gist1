@@ -11,6 +11,7 @@ import (
 	"log/slog"
 
 	"github.com/beck-8/subs-check/config"
+	"github.com/beck-8/subs-check/utils"
 )
 
 var (
@@ -44,12 +45,32 @@ func NewGistUploader() *GistUploader {
 	if config.GlobalConfig.GithubAPIMirror != "" {
 		gistAPIURL = config.GlobalConfig.GithubAPIMirror + "/gists"
 	}
+
+	// // 如果已配置代理，那么使用代理客户端请求
+	// if config.GlobalConfig.ProxyType != "" {
+	// 	return &GistUploader{
+	// 		client:   utils.ProxyHTTPClient(),
+	// 		token:    config.GlobalConfig.GithubToken,
+	// 		id:       config.GlobalConfig.GithubGistID,
+	// 		isPublic: false,
+	// 	}
+	// } else {
+	// 	return &GistUploader{
+	// 		client:   &http.Client{Timeout: 30 * time.Second},
+	// 		token:    config.GlobalConfig.GithubToken,
+	// 		id:       config.GlobalConfig.GithubGistID,
+	// 		isPublic: false,
+	// 	}
+	// }
+	//何必呢ProxyHTTPClient()默认会返回原生的http.Client,不需要再判断了嘛
+
 	return &GistUploader{
-		client:   &http.Client{Timeout: 30 * time.Second},
+		client:   utils.ProxyHTTPClient(),
 		token:    config.GlobalConfig.GithubToken,
 		id:       config.GlobalConfig.GithubGistID,
 		isPublic: false,
 	}
+
 }
 
 // UploadToGist 上传数据到 Gist 的入口函数

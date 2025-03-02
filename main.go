@@ -64,6 +64,12 @@ func (app *App) Initialize() error {
 		}
 	}
 
+	if config.GlobalConfig.ProxyType != "" && config.GlobalConfig.ProxyUrl != "" {
+		slog.Info("已启用" + config.GlobalConfig.ProxyUrl + "代理 ")
+	} else {
+		slog.Info("未启用代理")
+	}
+
 	return nil
 }
 
@@ -202,7 +208,7 @@ func (app *App) Run() {
 
 	for {
 		if err := app.checkProxies(); err != nil {
-			slog.Error(fmt.Sprintf("检测代理失败: %v", err))
+			slog.Error(fmt.Sprintf("检测节点失败: %v", err))
 			os.Exit(1)
 		}
 
@@ -214,11 +220,11 @@ func (app *App) Run() {
 
 // checkProxies 执行代理检测
 func (app *App) checkProxies() error {
-	slog.Info("开始检测代理")
+	slog.Info("开始检测节点")
 
 	results, err := check.Check()
 	if err != nil {
-		return fmt.Errorf("检测代理失败: %w", err)
+		return fmt.Errorf("检测节点失败: %w", err)
 	}
 
 	slog.Info("检测完成")
