@@ -196,6 +196,23 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 // updateProxyName 更新代理名称
 func (pc *ProxyChecker) updateProxyName(res *Result, speed int) {
 	var ipRisk string
+	// 检查IP风险
+	if config.GlobalConfig.IPRiskCheck {
+		httpClient := CreateClient(res.Proxy)
+		if httpClient == nil {
+			slog.Debug(fmt.Sprintf("创建updateProxyName代理Client失败: %v", res.Proxy["name"]))
+			return
+		}
+		defer httpClient.Close()
+		_, ip := proxyutils.GetProxyCountry(httpClient.Client)
+		risk, err := platfrom.CheckIPRisk(httpClient.Client, ip)
+		if err == nil {
+			ipRisk = risk
+		} else {
+			slog.Debug(fmt.Sprintf("查询IP欺诈失败: %v", err))
+		}
+	}
+
 	// 以节点IP查询位置重命名节点
 	if config.GlobalConfig.RenameNode {
 		// hy2协议 不知道为什么在被前边测速后就脏了，就不能用了，我也不知道为什么，奇葩。
@@ -206,20 +223,11 @@ func (pc *ProxyChecker) updateProxyName(res *Result, speed int) {
 			return
 		}
 		defer httpClient.Close()
-		country, ip := proxyutils.GetProxyCountry(httpClient.Client)
+		country, _ := proxyutils.GetProxyCountry(httpClient.Client)
 		if country == "" {
 			country = "未识别"
 		}
 		res.Proxy["name"] = proxyutils.Rename(country)
-
-		if config.GlobalConfig.MediaCheck {
-			risk, err := platfrom.CheckIPRisk(httpClient.Client, ip)
-			if err == nil {
-				ipRisk = risk
-			} else {
-				slog.Debug(fmt.Sprintf("查询IP欺诈失败: %v", err))
-			}
-		}
 	}
 	// 获取速度
 	if config.GlobalConfig.SpeedTestUrl != "" {

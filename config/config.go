@@ -33,6 +33,7 @@ type Config struct {
 	SubStorePort       string   `yaml:"sub-store-port"`
 	MihomoOverwriteUrl string   `yaml:"mihomo-overwrite-url"`
 	MediaCheck         bool     `yaml:"media-check"`
+	IPRiskCheck        bool     `yaml:"ip-risk-check"`
 }
 
 var GlobalConfig = &Config{
