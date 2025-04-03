@@ -22,7 +22,7 @@
   - disney
   - IP欺诈分数
 - 合并多个订阅
-- 将订阅转换为clash/mihomo/base64/QX等等[任意格式的订阅](https://github.com/beck-8/subs-check?tab=readme-ov-file#%E8%AE%A2%E9%98%85%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95)
+- 将订阅转换为clash/clash.meta/base64/QX等等[任意格式的订阅](https://github.com/beck-8/subs-check?tab=readme-ov-file#%E8%AE%A2%E9%98%85%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95)
 - 节点去重
 - 节点重命名
 - 节点测速（单线程）
@@ -116,7 +116,7 @@ docker run -d --name subs-check -p 8199:8199 -p 8299:8299 -e HTTP_PROXY=http://1
 ```yaml
 version: "3"
 services:
-  mihomo-check:
+  subs-check:
     image: ghcr.io/beck-8/subs-check:latest
     container_name: subs-check
     # mem_limit: 500m
@@ -255,6 +255,8 @@ http://127.0.0.1:8299/api/file/mihomo
 > 此处与上方的`http://127.0.0.1:8199/mihomo.yaml`有什么区别？上方的是基于此链接download下来的文件，主要用于保存到 `local` `r2` `gist` `webdav` 使用，所以你使用哪个都可以。唯一的区别在于，**此链接会根据你配置的覆写URL，实时生成带分流规则的文件**。
 
 如果你还有什么其他的需求，使用上方的通用订阅自己处理，或者学习[sub-store](https://github.com/sub-store-org/sub-store-docs)中的文件管理，可以写任意插件，功能真的很强大！！！
+
+当你打开`http://127.0.0.1:8299`，你发现跳转到了`https://sub-store.vercel.app/subs`，看[**这里**](./doc/sub-store.md)
 
 ---
 **直接裸核运行 tun 模式（忽略）**
