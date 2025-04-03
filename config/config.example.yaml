@@ -37,6 +37,17 @@ ip-risk-check: false
 # 是否开启流媒体检测
 media-check: false
 
+# 是否开启UDP检测
+# 开启后会通过代理访问STUN服务器检测UDP连通性，检测节点是否支持在线游戏，支持则在节点名称后添加|UDP标志
+udp-check: false
+
+# STUN 服务器地址，用于UDP检测，默认使用 Google STUN 服务器
+stun-server: "stun.l.google.com:19302"
+
+# UDP检查通过后附加的标志文本
+# 如果 udp-check 为 true 且检查通过，此文本会添加到节点名称中
+udp-flag-text: "游戏"
+
 # 保留之前测试成功的节点
 # 如果为true，则保留之前测试成功的节点，这样就不会因为上游链接更新，导致可用的节点被清除掉
 keep-success-proxies: false
