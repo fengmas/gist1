@@ -39,10 +39,12 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
           git remote add upstream https://github.com/beck-8/subs-check.git
-          git fetch upstream
+
+          # 拉取 upstream/main 明确分支引用
+          git fetch upstream main:upstream-main
 
           git checkout master
-          git merge upstream/main --allow-unrelated-histories --no-edit
+          git merge upstream-main --allow-unrelated-histories --no-edit
 
           git tag $LATEST_TAG
           git push origin master
