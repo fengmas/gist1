@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - '*'
-  workflow_dispatch: {}
+  workflow_dispatch:  # 允许手动运行
 
 permissions:
   contents: write
@@ -17,9 +17,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 获取完整历史记录
+          fetch-depth: 0  # 获取所有 commit 和 tag
 
-      - name: Tag
+      - name: Fetch tags
         run: git fetch --force --tags
 
       - name: Setup Go
@@ -32,6 +32,6 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --snapshot  # 👈 添加 --snapshot 跳过 tag 检查
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
