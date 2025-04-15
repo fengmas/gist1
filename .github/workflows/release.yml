@@ -1,54 +1,85 @@
-name: Sync Upstream Release
+name: Sync and Release
 
 on:
   schedule:
-    - cron: '0 * * * *'   # 每小时检查一次
-  workflow_dispatch:       # 支持手动触发
+    - cron: '0 * * * *'  # 每小时运行一次
+  workflow_dispatch:      # 允许手动触发
+
+env:
+  UPSTREAM: beck-8/subs-check
+  DEFAULT_BRANCH: main  # 上游主分支是 main
+  LOCAL_BRANCH: master  # 你自己的分支是 master
 
 jobs:
-  sync:
+  sync-and-release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout self
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Get upstream latest tag and default branch
-        id: get_info
+      - name: Setup Git
         run: |
-          echo "Getting latest tag and branch..."
-          UPSTREAM_REPO="beck-8/subs-check"
-          LATEST_TAG=$(curl -s https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest | jq -r .tag_name)
-          DEFAULT_BRANCH=$(curl -s https://api.github.com/repos/${UPSTREAM_REPO} | jq -r .default_branch)
+          git config user.name "1dok"
+          git config user.email "1dok@users.noreply.github.com"
 
-          echo "LATEST_TAG=${LATEST_TAG}" >> $GITHUB_ENV
-          echo "DEFAULT_BRANCH=${DEFAULT_BRANCH}" >> $GITHUB_ENV
-
-          echo "Latest tag: $LATEST_TAG"
-          echo "Default branch: $DEFAULT_BRANCH"
-
-      - name: Check if local already has this tag
+      - name: Add upstream remote
         run: |
-          if git ls-remote --tags origin | grep -q "refs/tags/${LATEST_TAG}$"; then
+          git remote add upstream https://github.com/${UPSTREAM}.git
+          git fetch upstream --tags
+
+      - name: Get latest tag from upstream
+        id: get_tag
+        run: |
+          LATEST_TAG=$(git tag -l --sort=-v:refname | grep '^v' | head -n 1)
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          git fetch origin --tags
+          if git rev-parse "$LATEST_TAG" >/dev/null 2>&1; then
             echo "EXISTS=true" >> $GITHUB_ENV
-            echo "Tag $LATEST_TAG already exists in local, skipping sync."
           else
             echo "EXISTS=false" >> $GITHUB_ENV
-            echo "Tag $LATEST_TAG not found, syncing..."
           fi
 
       - name: Sync upstream and create tag
         if: env.EXISTS == 'false'
         run: |
-          git config user.name "1dok"
-          git config user.email "1dok@users.noreply.github.com"
+          git fetch upstream $DEFAULT_BRANCH:upstream-temp
+          git checkout $LOCAL_BRANCH
 
-          git remote add upstream https://github.com/beck-8/subs-check.git
-          git fetch upstream ${DEFAULT_BRANCH}:upstream-temp
-
-          git checkout master
-          git merge upstream-temp --allow-unrelated-histories --no-edit
+          # Merge upstream, keep local conflicts
+          git merge upstream-temp -m "Merge upstream" -X ours || true
 
           git tag $LATEST_TAG
-          git push origin master
+          git push origin $LOCAL_BRANCH
           git push origin $LATEST_TAG
+
+  release:
+    needs: sync-and-release
+    if: env.EXISTS == 'false'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
