@@ -1,37 +1,50 @@
-name: Release
+name: Sync Upstream Release
 
 on:
-  push:
-    tags:
-      - '*'
-  workflow_dispatch:  # 允许手动运行
-
-permissions:
-  contents: write
-  packages: write
+  schedule:
+    - cron: '0 * * * *'  # 每小时检查一次
+  workflow_dispatch:     # 可手动触发
 
 jobs:
-  releaser:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # 获取所有 commit 和 tag
 
-      - name: Fetch tags
-        run: git fetch --force --tags
+      - name: Get latest upstream release
+        id: get_release
+        run: |
+          UPSTREAM_REPO="beck-8/subs-check"
+          LATEST_TAG=$(curl -s https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest | jq -r .tag_name)
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+          echo "Latest tag from upstream: $LATEST_TAG"
 
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: stable
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/${LATEST_TAG}$"; then
+            echo "Tag already exists in current repo"
+            echo "EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "Tag not found in current repo"
+            echo "EXISTS=false" >> $GITHUB_ENV
+          fi
 
-      - name: Release
-        uses: goreleaser/goreleaser-action@v4
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean --snapshot  # 👈 添加 --snapshot 跳过 tag 检查
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sync upstream and create tag
+        if: env.EXISTS == 'false'
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          git remote add upstream https://github.com/beck-8/subs-check.git
+          git fetch upstream
+
+          # 把上游 main 分支合并到自己 main 分支（注意：如果你不是 main，请改成对应分支名）
+          git checkout main
+          git merge upstream/main --allow-unrelated-histories --no-edit
+
+          # 创建新 tag 并推送
+          git tag $LATEST_TAG
+          git push origin main
+          git push origin $LATEST_TAG
