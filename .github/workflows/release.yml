@@ -34,18 +34,7 @@ jobs:
           LATEST_TAG=$(git tag -l --sort=-v:refname | grep '^v' | head -n 1)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
           
-      - name: Check if tag already exists
-        id: check
-        run: |
-          git fetch origin --tags
-          if git rev-parse "$LATEST_TAG" >/dev/null 2>&1; then
-            echo "EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "EXISTS=false" >> $GITHUB_ENV
-          fi
-
       - name: Sync upstream and create tag
-        if: ${{ steps.check.outputs.EXISTS == 'false' }}
         run: |
           git fetch upstream $DEFAULT_BRANCH:upstream-temp
           git checkout $LOCAL_BRANCH
@@ -58,8 +47,6 @@ jobs:
           git push origin $LATEST_TAG
 
   release:
-    needs: sync-and-release
-    if: ${{ steps.check.outputs.EXISTS == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -71,12 +58,17 @@ jobs:
       - name: Fetch tags
         run: git fetch --tags
 
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: stable
+      - name: Check if tag already exists
+        id: check
+        run: |
+          if git rev-parse "$LATEST_TAG" >/dev/null 2>&1; then
+            echo "EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "EXISTS=false" >> $GITHUB_ENV
+          fi
 
       - name: Run GoReleaser
+        if: ${{ env.EXISTS == 'false' }}
         uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
