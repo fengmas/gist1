@@ -42,7 +42,7 @@ jobs:
 
           # 把上游 main 分支合并到自己 main 分支（注意：如果你不是 main，请改成对应分支名）
           git checkout main
-          git merge upstream/main --allow-unrelated-histories --no-edit
+          git merge upstream/master --allow-unrelated-histories --no-edit
 
           # 创建新 tag 并推送
           git tag $LATEST_TAG
