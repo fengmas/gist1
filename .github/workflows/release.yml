@@ -10,19 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout self
         uses: actions/checkout@v3
 
-      - name: Get latest upstream release
-        id: get_release
+      - name: Get latest upstream release and default branch
+        id: get_info
         run: |
           UPSTREAM_REPO="beck-8/subs-check"
           LATEST_TAG=$(curl -s https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest | jq -r .tag_name)
+          DEFAULT_BRANCH=$(curl -s https://api.github.com/repos/${UPSTREAM_REPO} | jq -r .default_branch)
+          
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-          echo "Latest tag from upstream: $LATEST_TAG"
+          echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
+          
+          echo "Latest tag: $LATEST_TAG"
+          echo "Upstream default branch: $DEFAULT_BRANCH"
 
       - name: Check if tag already exists
-        id: check_tag
         run: |
           if git ls-remote --tags origin | grep -q "refs/tags/${LATEST_TAG}$"; then
             echo "EXISTS=true" >> $GITHUB_ENV
@@ -40,12 +44,5 @@ jobs:
 
           git remote add upstream https://github.com/beck-8/subs-check.git
 
-          # 拉取 upstream/main 明确分支引用
-          git fetch upstream main:upstream-main
-
-          git checkout master
-          git merge upstream-main --allow-unrelated-histories --no-edit
-
-          git tag $LATEST_TAG
-          git push origin master
-          git push origin $LATEST_TAG
+          # 动态抓取 upstream 的默认分支
+          git fetch upstream ${
