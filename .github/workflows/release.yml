@@ -33,7 +33,7 @@ jobs:
         run: |
           LATEST_TAG=$(git tag -l --sort=-v:refname | grep '^v' | head -n 1)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
+          
       - name: Check if tag already exists
         id: check
         run: |
@@ -45,7 +45,7 @@ jobs:
           fi
 
       - name: Sync upstream and create tag
-        if: env.EXISTS == 'false'
+        if: ${{ env.EXISTS == 'false' }}
         run: |
           git fetch upstream $DEFAULT_BRANCH:upstream-temp
           git checkout $LOCAL_BRANCH
@@ -59,7 +59,7 @@ jobs:
 
   release:
     needs: sync-and-release
-    if: env.EXISTS == 'false'
+    if: ${{ env.EXISTS == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
