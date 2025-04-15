@@ -2,8 +2,8 @@ name: Sync Upstream Release
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 每小时执行一次
-  workflow_dispatch:      # 手动触发也可以
+    - cron: '0 * * * *'   # 每小时检查一次
+  workflow_dispatch:       # 支持手动触发
 
 jobs:
   sync:
@@ -13,36 +13,42 @@ jobs:
       - name: Checkout self
         uses: actions/checkout@v3
 
-      - name: Get latest upstream release and default branch
+      - name: Get upstream latest tag and default branch
         id: get_info
         run: |
+          echo "Getting latest tag and branch..."
           UPSTREAM_REPO="beck-8/subs-check"
           LATEST_TAG=$(curl -s https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest | jq -r .tag_name)
           DEFAULT_BRANCH=$(curl -s https://api.github.com/repos/${UPSTREAM_REPO} | jq -r .default_branch)
-          
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-          echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
-          
-          echo "Latest tag: $LATEST_TAG"
-          echo "Upstream default branch: $DEFAULT_BRANCH"
 
-      - name: Check if tag already exists
+          echo "LATEST_TAG=${LATEST_TAG}" >> $GITHUB_ENV
+          echo "DEFAULT_BRANCH=${DEFAULT_BRANCH}" >> $GITHUB_ENV
+
+          echo "Latest tag: $LATEST_TAG"
+          echo "Default branch: $DEFAULT_BRANCH"
+
+      - name: Check if local already has this tag
         run: |
           if git ls-remote --tags origin | grep -q "refs/tags/${LATEST_TAG}$"; then
             echo "EXISTS=true" >> $GITHUB_ENV
-            echo "Tag $LATEST_TAG already exists."
+            echo "Tag $LATEST_TAG already exists in local, skipping sync."
           else
             echo "EXISTS=false" >> $GITHUB_ENV
-            echo "Tag $LATEST_TAG not found, will create it."
+            echo "Tag $LATEST_TAG not found, syncing..."
           fi
 
-      - name: Sync upstream and tag
+      - name: Sync upstream and create tag
         if: env.EXISTS == 'false'
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "1dok"
+          git config user.email "1dok@users.noreply.github.com"
 
           git remote add upstream https://github.com/beck-8/subs-check.git
+          git fetch upstream ${DEFAULT_BRANCH}:upstream-temp
 
-          # 动态抓取 upstream 的默认分支
-          git fetch upstream ${
+          git checkout master
+          git merge upstream-temp --allow-unrelated-histories --no-edit
+
+          git tag $LATEST_TAG
+          git push origin master
+          git push origin $LATEST_TAG
