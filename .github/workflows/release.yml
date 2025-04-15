@@ -45,7 +45,7 @@ jobs:
           fi
 
       - name: Sync upstream and create tag
-        if: ${{ env.EXISTS == 'false' }}
+        if: ${{ steps.check.outputs.EXISTS == 'false' }}
         run: |
           git fetch upstream $DEFAULT_BRANCH:upstream-temp
           git checkout $LOCAL_BRANCH
@@ -59,7 +59,7 @@ jobs:
 
   release:
     needs: sync-and-release
-    if: ${{ env.EXISTS == 'false' }}
+    if: ${{ steps.check.outputs.EXISTS == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
