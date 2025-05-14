@@ -104,8 +104,12 @@ func (app *App) Run() {
 	// 设置初始定时器模式
 	app.setTimer()
 
-	// 首次立即执行检测
-	app.triggerCheck()
+	// 仅在cron表达式为空时，首次启动立即执行检测
+	if config.GlobalConfig.CronExpression != "" {
+		slog.Warn("使用cron表达式，首次启动不立即执行检测")
+	} else {
+		app.triggerCheck()
+	}
 
 	// 在主循环中处理手动触发
 	for range app.checkChan {
@@ -117,9 +121,10 @@ func (app *App) Run() {
 func (app *App) setTimer() {
 	// 停止现有定时器
 	if app.ticker != nil {
-		app.ticker.Stop()
+		// 应该先发送停止信号，防止被=nil后panic
 		close(app.done)                // 发送停止信号
 		app.done = make(chan struct{}) // 创建新通道
+		app.ticker.Stop()
 		app.ticker = nil
 	}
 
@@ -230,6 +235,10 @@ func (app *App) checkProxies() error {
 	save.SaveConfig(results)
 	utils.SendNotify(len(results))
 	utils.UpdateSubs()
+
+	// 执行回调脚本
+	utils.ExecuteCallback(len(results))
+
 	return nil
 }
 

@@ -21,8 +21,8 @@ func GetProxies() ([]map[string]any, error) {
 	slog.Info(fmt.Sprintf("当前设置订阅链接数量: %d", len(config.GlobalConfig.SubUrls)))
 
 	var wg sync.WaitGroup
-	proxyChan := make(chan map[string]any, 1)                                // 缓冲通道存储解析的代理
-	concurrentLimit := make(chan struct{}, config.GlobalConfig.SubUrlsReTry) // 限制并发数
+	proxyChan := make(chan map[string]any, 1)                              // 缓冲通道存储解析的代理
+	concurrentLimit := make(chan struct{}, config.GlobalConfig.Concurrent) // 限制并发数
 
 	// 启动收集结果的协程
 	var mihomoProxies []map[string]any
@@ -130,7 +130,7 @@ func GetDateFromSubs(subUrl string) ([]byte, error) {
 	var lastErr error
 
 	client := &http.Client{
-		Timeout: time.Duration(60) * time.Second,
+		Timeout: time.Duration(10) * time.Second,
 	}
 
 	for i := 0; i < maxRetries; i++ {
@@ -146,7 +146,7 @@ func GetDateFromSubs(subUrl string) ([]byte, error) {
 		// 如果走clash，那么输出base64的时候还要更改每个类型的key，所以不能走，以后都走URI
 		// 如果用户想使用clash源，那可以在订阅链接结尾加上 &flag=clash.meta
 		// 模拟用户访问，防止被屏蔽
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+		req.Header.Set("User-Agent", convert.RandUserAgent())
 
 		resp, err := client.Do(req)
 		if err != nil {

@@ -83,6 +83,10 @@ func startSubStore() error {
 	if nodeBinPath := os.Getenv("NODEBIN_PATH"); nodeBinPath != "" {
 		nodePath = nodeBinPath
 	}
+	// 支持自定义sub-store脚本路径
+	if subStoreBinPath := os.Getenv("SUB_STORE_PATH"); subStoreBinPath != "" {
+		jsPath = subStoreBinPath
+	}
 	// 运行 JavaScript 文件
 	cmd := exec.Command(nodePath, jsPath)
 	// js会在运行目录释放依赖文件
@@ -140,6 +144,11 @@ func startSubStore() error {
 
 	// 增加body限制，默认1M
 	cmd.Env = append(cmd.Env, "SUB_STORE_BODY_JSON_LIMIT=10mb")
+	// 增加自定义访问路径
+	if config.GlobalConfig.SubStorePath != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("SUB_STORE_FRONTEND_BACKEND_PATH=%s", config.GlobalConfig.SubStorePath))
+		cmd.Env = append(cmd.Env, "SUB_STORE_BACKEND_MERGE=1")
+	}
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("启动 sub-store 失败: %w", err)
