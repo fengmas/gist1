@@ -5,8 +5,7 @@ before:
     - go mod tidy
 
 release:
-  prerelease:
-    auto: true  # 自动识别 beta、rc 作为预发布
+  prerelease: true  # 或 false，根据你是否要发布为预发布版本
 
 builds:
   - env:
