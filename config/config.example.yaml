@@ -78,13 +78,14 @@ output-dir: ""
 enable-web-ui: true
 
 # 填写Web控制面板的api-key，如果为空，则自动生成
-# 支持使用环境变量设置 API_KEY
+# 配置文件为空时，支持使用环境变量设置 API_KEY
 api-key: ""
 
 # 检测完成后执行的回调脚本路径
 # 脚本将在检测完成后执行，可用于自定义通知或其他操作
 # 例如: "/path/to/your/script.sh" 或 'C:\path\to\your\script.bat'
 # Linux请在脚本开头添加对应的：#!/bin/bash、#!/bin/sh、#!/usr/bin/env bash 等，编写标准的脚本
+# 注意如果使用docker，目前docker使用的alpine，只有sh，不支持bash
 callback-script: ""
 
 # 填写搭建的apprise API server 地址
@@ -160,6 +161,8 @@ sub-urls:
   # - https://example.com/sub2.txt
   # - https://example.com/sub?token=43fa8f0dc9bb00dcfec2afb21b14378a
   # - https://example.com/sub?token=43fa8f0dc9bb00dcfec2afb21b14378a?flag=clash.meta
+  # - https://raw.githubusercontent.com/example/repo/main/config/{Ymd}.yaml
+  # - https://raw.githubusercontent.com/example/repo/main/daily/daily-{Y}-{m}-{d}.yaml
   - "https://raw.githubusercontent.com/firefoxmmx2/v2rayshare_subcription/main/subscription/clash_sub.yaml"
   - "https://raw.githubusercontent.com/Roywaller/clash_subscription/refs/heads/main/clash_subscription.txt"
   - "https://raw.githubusercontent.com/Q3dlaXpoaQ/V2rayN_Clash_Node_Getter/refs/heads/main/APIs/sc0.yaml"
