@@ -1,8 +1,12 @@
+version: '2'
+
 before:
   hooks:
     - go mod tidy
+
 release:
-  prerelease: auto  # 自动识别 beta、rc 作为预发布
+  prerelease:
+    auto: true  # 自动识别 beta、rc 作为预发布
 
 builds:
   - env:
@@ -53,4 +57,4 @@ changelog:
       - '^test:'
       - '^chore:'
       - Merge pull request
-      - Merge branch 
+      - Merge branch
