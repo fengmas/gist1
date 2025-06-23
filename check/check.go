@@ -190,7 +190,7 @@ func (pc *ProxyChecker) run(proxies []map[string]any) ([]Result, error) {
 					}
 				}
 				pc.results = append(pc.results, *result)
-				pc.incrementAvailable()
+				// 🔧 修复：不再重复调用 incrementAvailable()，因为在连通性测试阶段已经计算过了
 			}
 		}
 	} else {
