@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/beck-8/subs-check/check"
 	"github.com/beck-8/subs-check/config"
@@ -34,48 +35,77 @@ type ConfigSaver struct {
 	saveMethod func([]byte, string) error
 }
 
-// NewConfigSaver 创建新的配置保存器
+// generateTimestampFilename 生成带时间戳的文件名
+func generateTimestampFilename() string {
+	timestamp := time.Now().Format("20060102150405")
+	return fmt.Sprintf("all_%s.yaml", timestamp)
+}
+
+// NewLocalConfigSaver 创建用于本地保存的配置保存器（包含时间戳文件）
+func NewLocalConfigSaver(results []check.Result) *ConfigSaver {
+	return newConfigSaver(results, true)
+}
+
+// NewConfigSaver 创建新的配置保存器（用于远程保存，不包含时间戳文件）
 func NewConfigSaver(results []check.Result) *ConfigSaver {
+	return newConfigSaver(results, false)
+}
+
+// newConfigSaver 内部函数，根据是否包含时间戳文件创建配置保存器
+func newConfigSaver(results []check.Result, includeTimestamp bool) *ConfigSaver {
+	categories := []ProxyCategory{
+		{
+			Name:    "all.yaml",
+			Proxies: make([]map[string]any, 0),
+			Filter:  func(result check.Result) bool { return true },
+		},
+		{
+			Name:    "mihomo.yaml",
+			Proxies: make([]map[string]any, 0),
+			Filter:  func(result check.Result) bool { return true },
+		},
+		{
+			Name:    "base64.txt",
+			Proxies: make([]map[string]any, 0),
+			Filter:  func(result check.Result) bool { return true },
+		},
+		// {
+		// 	Name:    "openai.yaml",
+		// 	Proxies: make([]map[string]any, 0),
+		// 	Filter:  func(result check.Result) bool { return result.Openai },
+		// },
+		// {
+		// 	Name:    "youtube.yaml",
+		// 	Proxies: make([]map[string]any, 0),
+		// 	Filter:  func(result check.Result) bool { return result.Youtube },
+		// },
+		// {
+		// 	Name:    "netflix.yaml",
+		// 	Proxies: make([]map[string]any, 0),
+		// 	Filter:  func(result check.Result) bool { return result.Netflix },
+		// },
+		// {
+		// 	Name:    "disney.yaml",
+		// 	Proxies: make([]map[string]any, 0),
+		// 	Filter:  func(result check.Result) bool { return result.Disney },
+		// },
+	}
+
+	// 只有在本地保存时才添加时间戳文件
+	if includeTimestamp {
+		timestampCategory := ProxyCategory{
+			Name:    generateTimestampFilename(),
+			Proxies: make([]map[string]any, 0),
+			Filter:  func(result check.Result) bool { return true },
+		}
+		// 在all.yaml之后插入时间戳文件
+		categories = append(categories[:1], append([]ProxyCategory{timestampCategory}, categories[1:]...)...)
+	}
+
 	return &ConfigSaver{
 		results:    results,
 		saveMethod: chooseSaveMethod(),
-		categories: []ProxyCategory{
-			{
-				Name:    "all.yaml",
-				Proxies: make([]map[string]any, 0),
-				Filter:  func(result check.Result) bool { return true },
-			},
-			{
-				Name:    "mihomo.yaml",
-				Proxies: make([]map[string]any, 0),
-				Filter:  func(result check.Result) bool { return true },
-			},
-			{
-				Name:    "base64.txt",
-				Proxies: make([]map[string]any, 0),
-				Filter:  func(result check.Result) bool { return true },
-			},
-			// {
-			// 	Name:    "openai.yaml",
-			// 	Proxies: make([]map[string]any, 0),
-			// 	Filter:  func(result check.Result) bool { return result.Openai },
-			// },
-			// {
-			// 	Name:    "youtube.yaml",
-			// 	Proxies: make([]map[string]any, 0),
-			// 	Filter:  func(result check.Result) bool { return result.Youtube },
-			// },
-			// {
-			// 	Name:    "netflix.yaml",
-			// 	Proxies: make([]map[string]any, 0),
-			// 	Filter:  func(result check.Result) bool { return result.Netflix },
-			// },
-			// {
-			// 	Name:    "disney.yaml",
-			// 	Proxies: make([]map[string]any, 0),
-			// 	Filter:  func(result check.Result) bool { return result.Disney },
-			// },
-		},
+		categories: categories,
 	}
 }
 
@@ -83,9 +113,9 @@ func NewConfigSaver(results []check.Result) *ConfigSaver {
 func SaveConfig(results []check.Result) {
 	tmp := config.GlobalConfig.SaveMethod
 	config.GlobalConfig.SaveMethod = "local"
-	// 奇技淫巧，保存到本地一份，因为我没想道其他更好的方法同时保存
+	// 本地保存时包含时间戳文件
 	{
-		saver := NewConfigSaver(results)
+		saver := NewLocalConfigSaver(results)
 		if err := saver.Save(); err != nil {
 			slog.Error(fmt.Sprintf("保存配置失败: %v", err))
 		}
@@ -95,7 +125,7 @@ func SaveConfig(results []check.Result) {
 		return
 	}
 	config.GlobalConfig.SaveMethod = tmp
-	// 如果其他配置验证失败，还会保存到本地一次
+	// 远程保存时不包含时间戳文件
 	{
 		saver := NewConfigSaver(results)
 		if err := saver.Save(); err != nil {
@@ -142,6 +172,20 @@ func (cs *ConfigSaver) categorizeProxies() {
 func (cs *ConfigSaver) saveCategory(category ProxyCategory) error {
 	if len(category.Proxies) == 0 {
 		slog.Warn(fmt.Sprintf("yaml节点为空，跳过保存: %s, saveMethod: %s", category.Name, config.GlobalConfig.SaveMethod))
+		return nil
+	}
+
+	// 处理带时间戳的all文件（格式：all_20230615120000.yaml）
+	if len(category.Name) > 4 && category.Name[:4] == "all_" && category.Name[len(category.Name)-5:] == ".yaml" {
+		yamlData, err := yaml.Marshal(map[string]any{
+			"proxies": category.Proxies,
+		})
+		if err != nil {
+			return fmt.Errorf("序列化yaml %s 失败: %w", category.Name, err)
+		}
+		if err := cs.saveMethod(yamlData, category.Name); err != nil {
+			return fmt.Errorf("保存 %s 失败: %w", category.Name, err)
+		}
 		return nil
 	}
 

@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"testing"
+
+	"github.com/beck-8/subs-check/check"
 )
 
 func TestGenUrls(t *testing.T) {
@@ -78,4 +81,56 @@ func TestGenUrls(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestGenerateTimestampFilename 测试时间戳文件名生成功能
+func TestGenerateTimestampFilename(t *testing.T) {
+	// 测试生成的文件名格式
+	filename := generateTimestampFilename()
+
+	// 验证文件名格式：all_20230615120000.yaml
+	matched, err := regexp.MatchString(`^all_\d{14}\.yaml$`, filename)
+	if err != nil {
+		t.Fatalf("正则表达式匹配失败: %v", err)
+	}
+
+	if !matched {
+		t.Errorf("生成的文件名格式不正确: %s, 期望格式: all_YYYYMMDDHHMMSS.yaml", filename)
+	}
+
+	t.Logf("生成的文件名: %s", filename)
+}
+
+// TestConfigSaverCategories 测试不同配置保存器的文件类别
+func TestConfigSaverCategories(t *testing.T) {
+	// 创建测试数据
+	results := []check.Result{
+		{
+			Proxy: map[string]any{
+				"name":   "test-proxy",
+				"type":   "ss",
+				"server": "example.com",
+				"port":   8080,
+			},
+		},
+	}
+
+	// 测试普通配置保存器（不包含时间戳文件）
+	normalSaver := NewConfigSaver(results)
+	normalCategories := normalSaver.categories
+
+	// 测试本地配置保存器（包含时间戳文件）
+	localSaver := NewLocalConfigSaver(results)
+	localCategories := localSaver.categories
+
+	// 验证两个保存器的基本文件数量差异
+	expectedDiff := 1 // 本地保存器应该比普通保存器多一个时间戳文件
+	actualDiff := len(localCategories) - len(normalCategories)
+
+	if actualDiff != expectedDiff {
+		t.Errorf("本地保存器应该比普通保存器多%d个文件，实际差异: %d", expectedDiff, actualDiff)
+	}
+
+	t.Logf("普通保存器文件数量: %d", len(normalCategories))
+	t.Logf("本地保存器文件数量: %d", len(localCategories))
 }
