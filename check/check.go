@@ -556,7 +556,9 @@ func (pc *ProxyChecker) distributeProxies(proxies []map[string]any) {
 func (pc *ProxyChecker) runConnectivityTest(proxies []map[string]any) []map[string]any {
 	var wg sync.WaitGroup
 	passedProxies := make([]map[string]any, 0)
-	passedProxiesMutex := &sync.Mutex{}
+
+	// 使用通道来收集通过测试的代理，避免锁竞争
+	passedChan := make(chan map[string]any, len(proxies))
 
 	// 启动连通性测试工作线程
 	for i := 0; i < pc.connectivityThreads; i++ {
@@ -569,15 +571,20 @@ func (pc *ProxyChecker) runConnectivityTest(proxies []map[string]any) []map[stri
 				}
 
 				if passed := pc.checkConnectivity(proxy); passed {
-					passedProxiesMutex.Lock()
-					passedProxies = append(passedProxies, proxy)
-					passedProxiesMutex.Unlock()
+					passedChan <- proxy     // 使用通道发送，无需加锁
 					pc.incrementAvailable() // 更新可用节点计数
 				}
 				pc.incrementProgress()
 			}
 		}()
 	}
+
+	// 启动收集goroutine
+	go func() {
+		for proxy := range passedChan {
+			passedProxies = append(passedProxies, proxy)
+		}
+	}()
 
 	// 分发连通性测试任务
 	go func() {
@@ -591,6 +598,11 @@ func (pc *ProxyChecker) runConnectivityTest(proxies []map[string]any) []map[stri
 	}()
 
 	wg.Wait()
+	close(passedChan)
+
+	// 等待收集完成
+	time.Sleep(10 * time.Millisecond)
+
 	// 确保可用计数器与实际通过的节点数量一致
 	atomic.StoreInt32(&pc.available, int32(len(passedProxies)))
 	// 给进度条一点时间显示最终状态
@@ -649,11 +661,88 @@ func (pc *ProxyChecker) runSpeedTest(proxies []map[string]any) {
 	collectWg.Wait()
 }
 
-// collectResults 收集检测结果
+// collectResults 收集检测结果，并进行去重和排序
 func (pc *ProxyChecker) collectResults() {
+	// 使用map进行去重，key为代理的唯一标识
+	resultMap := make(map[string]Result)
+
 	for result := range pc.resultChan {
-		pc.results = append(pc.results, result)
+		// 生成代理的唯一标识
+		key := pc.generateProxyKey(result.Proxy)
+
+		// 如果已存在相同的代理，比较速度，保留更快的
+		if existingResult, exists := resultMap[key]; exists {
+			if pc.compareResults(result, existingResult) {
+				resultMap[key] = result
+			}
+		} else {
+			resultMap[key] = result
+		}
 		pc.incrementAvailable() // 每收集一个有效结果就更新可用计数
+	}
+
+	// 将map转换为切片
+	pc.results = make([]Result, 0, len(resultMap))
+	for _, result := range resultMap {
+		pc.results = append(pc.results, result)
+	}
+
+	// 按延迟排序（从低到高）
+	pc.sortResultsBySpeed()
+}
+
+// generateProxyKey 生成代理的唯一标识
+func (pc *ProxyChecker) generateProxyKey(proxy map[string]any) string {
+	server, _ := proxy["server"].(string)
+	port, _ := proxy["port"]
+	servername, _ := proxy["servername"].(string)
+	password, _ := proxy["password"].(string)
+	if password == "" {
+		password, _ = proxy["uuid"].(string)
+	}
+	return fmt.Sprintf("%s:%v:%s:%s", server, port, servername, password)
+}
+
+// compareResults 比较两个结果，返回true表示第一个结果更好
+func (pc *ProxyChecker) compareResults(result1, result2 Result) bool {
+	speed1 := pc.extractSpeedFromName(result1.Proxy["name"].(string))
+	speed2 := pc.extractSpeedFromName(result2.Proxy["name"].(string))
+
+	// 速度更快的优先
+	return speed1 > speed2
+}
+
+// extractSpeedFromName 从节点名称中提取速度信息（KB/s）
+func (pc *ProxyChecker) extractSpeedFromName(name string) int {
+	// 匹配速度标记，如 "⬇️ 1.5MB/s" 或 "⬇️ 512KB/s"
+	re := regexp.MustCompile(`⬇️\s*([\d.]+)(MB|KB)/s`)
+	matches := re.FindStringSubmatch(name)
+	if len(matches) == 3 {
+		if speed, err := strconv.ParseFloat(matches[1], 64); err == nil {
+			if matches[2] == "MB" {
+				return int(speed * 1024) // 转换为KB/s
+			}
+			return int(speed) // 已经是KB/s
+		}
+	}
+	return 0 // 没有速度信息时返回0
+}
+
+// sortResultsBySpeed 按速度对结果进行排序
+func (pc *ProxyChecker) sortResultsBySpeed() {
+	// 需要导入sort包，但由于IDE自动格式化会移除未使用的导入，
+	// 我们使用一个简单的冒泡排序来避免导入问题
+	n := len(pc.results)
+	for i := 0; i < n-1; i++ {
+		for j := 0; j < n-i-1; j++ {
+			speed1 := pc.extractSpeedFromName(pc.results[j].Proxy["name"].(string))
+			speed2 := pc.extractSpeedFromName(pc.results[j+1].Proxy["name"].(string))
+
+			// 按速度从高到低排序
+			if speed1 < speed2 {
+				pc.results[j], pc.results[j+1] = pc.results[j+1], pc.results[j]
+			}
+		}
 	}
 }
 
