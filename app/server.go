@@ -17,8 +17,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// initHttpServer 初始化HTTP服务器
-func (app *App) initHttpServer() error {
+// initHTTPServer 初始化HTTP服务器
+func (app *App) initHTTPServer() error {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
@@ -192,6 +192,7 @@ func (app *App) getVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": app.version})
 }
 
+// ReadLastNLines 读取文件的最后N行
 func ReadLastNLines(filePath string, n int) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -223,6 +224,7 @@ func ReadLastNLines(filePath string, n int) ([]string, error) {
 	return result, nil
 }
 
+// GenerateSimpleKey 生成简单的6位数字密钥
 func GenerateSimpleKey() string {
 	return fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
 }

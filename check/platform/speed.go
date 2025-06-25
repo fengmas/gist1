@@ -14,6 +14,7 @@ import (
 	"github.com/metacubex/mihomo/common/convert"
 )
 
+// CheckSpeed 检测网络速度
 func CheckSpeed(httpClient *http.Client, bucket *ratelimit.Bucket) (int, int64, error) {
 	// 创建一个新的测速专用客户端，基于原有客户端的传输层
 	speedClient := &http.Client{
@@ -23,7 +24,7 @@ func CheckSpeed(httpClient *http.Client, bucket *ratelimit.Bucket) (int, int64, 
 		Transport: httpClient.Transport,
 	}
 
-	req, err := http.NewRequest("GET", config.GlobalConfig.SpeedTestUrl, nil)
+	req, err := http.NewRequest("GET", config.GlobalConfig.SpeedTestURL, nil)
 	if err != nil {
 		return 0, 0, err
 	}

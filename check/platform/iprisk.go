@@ -9,6 +9,7 @@ import (
 	"github.com/metacubex/mihomo/common/convert"
 )
 
+// CheckIPRisk 检测IP风险等级
 func CheckIPRisk(httpClient *http.Client, ip string) (string, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://scamalytics.com/ip/%s", ip), nil)
 	if err != nil {

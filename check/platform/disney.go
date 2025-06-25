@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// CheckDisney 检测Disney+访问状态
 func CheckDisney(httpClient *http.Client) (bool, error) {
 	// 定义常量
 	const (

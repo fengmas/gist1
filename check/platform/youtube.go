@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// CheckYoutube 检测YouTube访问状态
 func CheckYoutube(httpClient *http.Client) (bool, error) {
 	// 创建请求
 	req, err := http.NewRequest("GET", "https://www.youtube.com/premium", nil)

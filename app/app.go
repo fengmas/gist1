@@ -67,7 +67,7 @@ func (app *App) Initialize() error {
 	app.interval = config.GlobalConfig.CheckInterval
 
 	if config.GlobalConfig.ListenPort != "" {
-		if err := app.initHttpServer(); err != nil {
+		if err := app.initHTTPServer(); err != nil {
 			return fmt.Errorf("初始化HTTP服务器失败: %w", err)
 		}
 	}
@@ -244,6 +244,7 @@ func (app *App) checkProxies() error {
 	return nil
 }
 
+// TempLog 返回临时日志文件的完整路径
 func TempLog() string {
 	return filepath.Join(os.TempDir(), "subs-check.log")
 }

@@ -2,6 +2,7 @@ package platform
 
 import "net/http"
 
+// CheckNetflix 检测Netflix访问状态
 func CheckNetflix(httpClient *http.Client) (bool, error) {
 	// https://www.netflix.com/title/81280792
 	req, err := http.NewRequest("GET", "https://www.netflix.com/title/81280792", nil)

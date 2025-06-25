@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// CheckGemini 检测Gemini访问状态
 // https://github.com/clash-verge-rev/clash-verge-rev/blob/c894a15d13d5bcce518f8412cc393b56272a9afa/src-tauri/src/cmd/media_unlock_checker.rs#L241
 func CheckGemini(httpClient *http.Client) (bool, error) {
 	req, err := http.NewRequest("GET", "https://gemini.google.com/", nil)

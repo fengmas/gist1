@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// CheckOpenai 检测OpenAI访问状态
 func CheckOpenai(httpClient *http.Client) (bool, error) {
 	req, err := http.NewRequest("GET", "https://api.openai.com/compliance/cookie_requirements", nil)
 	if err != nil {

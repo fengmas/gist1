@@ -54,13 +54,22 @@ type ProxyChecker struct {
 	speedTestTasks      chan map[string]any
 }
 
+// Progress 当前检测进度计数器
 var Progress atomic.Uint32
+
+// Available 可用节点数量计数器
 var Available atomic.Uint32
+
+// ProxyCount 总代理节点数量计数器
 var ProxyCount atomic.Uint32
+
+// TotalBytes 总下载字节数计数器
 var TotalBytes atomic.Int64
 
+// ForceClose 强制关闭标志
 var ForceClose atomic.Bool
 
+// Bucket 速度限制桶
 var Bucket *ratelimit.Bucket
 
 // NewProxyChecker 创建新的检测器实例
@@ -160,7 +169,7 @@ func (pc *ProxyChecker) run(proxies []map[string]any) ([]Result, error) {
 	// 第二阶段：速度测试
 	if len(connectivityPassedProxies) > 0 {
 		// 检查是否需要进行速度测试或媒体检测
-		needSpeedTest := config.GlobalConfig.SpeedTestUrl != ""
+		needSpeedTest := config.GlobalConfig.SpeedTestURL != ""
 		needMediaCheck := config.GlobalConfig.MediaCheck
 
 		if needSpeedTest || needMediaCheck {
@@ -208,7 +217,7 @@ func (pc *ProxyChecker) run(proxies []map[string]any) ([]Result, error) {
 		slog.Warn(fmt.Sprintf("达到节点数量限制: %d", config.GlobalConfig.SuccessLimit))
 	}
 	slog.Info(fmt.Sprintf("可用节点数量: %d", len(pc.results)))
-	if config.GlobalConfig.SpeedTestUrl != "" {
+	if config.GlobalConfig.SpeedTestURL != "" {
 		slog.Info(fmt.Sprintf("测速总消耗流量: %.2fGB", float64(TotalBytes.Load())/1024/1024/1024))
 	}
 
@@ -289,7 +298,7 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 
 	var speed int
 	var totalBytes int64
-	if config.GlobalConfig.SpeedTestUrl != "" {
+	if config.GlobalConfig.SpeedTestURL != "" {
 		var err error
 		speed, totalBytes, err = platform.CheckSpeed(httpClient.Client, Bucket)
 		TotalBytes.Add(totalBytes)
@@ -381,7 +390,7 @@ func (pc *ProxyChecker) checkSpeed(proxy map[string]any) *Result {
 
 	var speed int
 	var totalBytes int64
-	if config.GlobalConfig.SpeedTestUrl != "" {
+	if config.GlobalConfig.SpeedTestURL != "" {
 		var err error
 		speed, totalBytes, err = platform.CheckSpeed(httpClient.Client, Bucket)
 		TotalBytes.Add(totalBytes)
@@ -453,7 +462,7 @@ func (pc *ProxyChecker) updateProxyName(res *Result, httpClient *ProxyClient, sp
 
 	var tags []string
 	// 获取速度
-	if config.GlobalConfig.SpeedTestUrl != "" {
+	if config.GlobalConfig.SpeedTestURL != "" {
 		name = regexp.MustCompile(`\s*\|(?:\s*⬇️\s*[\d.]+[KM]B/s)`).ReplaceAllString(name, "")
 		var speedStr string
 		if speed < 1024 {
@@ -746,12 +755,13 @@ func (pc *ProxyChecker) sortResultsBySpeed() {
 	}
 }
 
-// CreateClient creates and returns an http.Client with a Close function
+// ProxyClient 包装了http.Client和代理信息的结构体
 type ProxyClient struct {
 	*http.Client
 	proxy constant.Proxy
 }
 
+// CreateClient 创建并返回一个带有代理配置的HTTP客户端
 func CreateClient(mapping map[string]any) *ProxyClient {
 	proxy, err := adapter.ParseProxy(mapping)
 	if err != nil {
@@ -811,38 +821,38 @@ func (pc *ProxyChecker) checkSubscriptionSuccessRate(allProxies []map[string]any
 
 	// 统计所有节点的订阅来源
 	for _, proxy := range allProxies {
-		if subUrl, ok := proxy["subscription_url"].(string); ok {
-			stats := subStats[subUrl]
+		if subURL, ok := proxy["subscription_url"].(string); ok {
+			stats := subStats[subURL]
 			stats.total++
-			subStats[subUrl] = stats
+			subStats[subURL] = stats
 		}
 	}
 
 	// 统计成功节点的订阅来源
 	for _, result := range pc.results {
 		if result.Proxy != nil {
-			if subUrl, ok := result.Proxy["subscription_url"].(string); ok {
-				stats := subStats[subUrl]
+			if subURL, ok := result.Proxy["subscription_url"].(string); ok {
+				stats := subStats[subURL]
 				stats.success++
-				subStats[subUrl] = stats
+				subStats[subURL] = stats
 			}
 			delete(result.Proxy, "subscription_url")
 		}
 	}
 
 	// 检查成功率并发出警告
-	for subUrl, stats := range subStats {
+	for subURL, stats := range subStats {
 		if stats.total > 0 {
 			successRate := float32(stats.success) / float32(stats.total)
 
 			// 如果成功率低于x，发出警告
 			if successRate < config.GlobalConfig.SuccessRate {
-				slog.Warn(fmt.Sprintf("订阅成功率过低: %s", subUrl),
+				slog.Warn(fmt.Sprintf("订阅成功率过低: %s", subURL),
 					"总节点数", stats.total,
 					"成功节点数", stats.success,
 					"成功占比", fmt.Sprintf("%.2f%%", successRate*100))
 			} else {
-				slog.Debug(fmt.Sprintf("订阅节点统计: %s", subUrl),
+				slog.Debug(fmt.Sprintf("订阅节点统计: %s", subURL),
 					"总节点数", stats.total,
 					"成功节点数", stats.success,
 					"成功占比", fmt.Sprintf("%.2f%%", successRate*100))
