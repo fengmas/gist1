@@ -1,13 +1,15 @@
 package config
 
+// embed 用于嵌入默认配置模板
 import _ "embed"
 
+// Config 应用程序配置结构体
 type Config struct {
 	PrintProgress       bool     `yaml:"print-progress"`
 	Concurrent          int      `yaml:"concurrent"`
 	CheckInterval       int      `yaml:"check-interval"`
 	CronExpression      string   `yaml:"cron-expression"`
-	SpeedTestUrl        string   `yaml:"speed-test-url"`
+	SpeedTestURL        string   `yaml:"speed-test-url"`
 	DownloadTimeout     int      `yaml:"download-timeout"`
 	DownloadMB          int      `yaml:"download-mb"`
 	TotalSpeedLimit     int      `yaml:"total-speed-limit"`
@@ -35,18 +37,18 @@ type Config struct {
 	SubUrlsReTry        int      `yaml:"sub-urls-retry"`
 	SubUrls             []string `yaml:"sub-urls"`
 	SuccessRate         float32  `yaml:"success-rate"`
-	MihomoApiUrl        string   `yaml:"mihomo-api-url"`
-	MihomoApiSecret     string   `yaml:"mihomo-api-secret"`
+	MihomoAPIURL        string   `yaml:"mihomo-api-url"`
+	MihomoAPISecret     string   `yaml:"mihomo-api-secret"`
 	ListenPort          string   `yaml:"listen-port"`
 	RenameNode          bool     `yaml:"rename-node"`
 	KeepSuccessProxies  bool     `yaml:"keep-success-proxies"`
 	OutputDir           string   `yaml:"output-dir"`
-	AppriseApiServer    string   `yaml:"apprise-api-server"`
-	RecipientUrl        []string `yaml:"recipient-url"`
+	AppriseAPIServer    string   `yaml:"apprise-api-server"`
+	RecipientURL        []string `yaml:"recipient-url"`
 	NotifyTitle         string   `yaml:"notify-title"`
 	SubStorePort        string   `yaml:"sub-store-port"`
 	SubStorePath        string   `yaml:"sub-store-path"`
-	MihomoOverwriteUrl  string   `yaml:"mihomo-overwrite-url"`
+	MihomoOverwriteURL  string   `yaml:"mihomo-overwrite-url"`
 	MediaCheck          bool     `yaml:"media-check"`
 	Platforms           []string `yaml:"platforms"`
 	SuccessLimit        int32    `yaml:"success-limit"`
@@ -61,7 +63,7 @@ var GlobalConfig = &Config{
 	// 新增配置，给未更改配置文件的用户一个默认值
 	ListenPort:          ":8199",
 	NotifyTitle:         "🔔 节点状态更新",
-	MihomoOverwriteUrl:  "http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml",
+	MihomoOverwriteURL:  "http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml",
 	Platforms:           []string{"openai", "youtube", "netflix", "disney", "gemini", "iprisk"},
 	ConnectivityRetries: 3, // 默认重试3次
 	ConnectivityThreads: 0, // 0表示使用Concurrent值

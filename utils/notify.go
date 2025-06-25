@@ -29,7 +29,7 @@ func Notify(request NotifyRequest) error {
 	}
 
 	// 发送请求
-	resp, err := http.Post(config.GlobalConfig.AppriseApiServer, "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(config.GlobalConfig.AppriseAPIServer, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("发送请求失败: %w", err)
 	}
@@ -45,14 +45,14 @@ func Notify(request NotifyRequest) error {
 }
 
 func SendNotify(length int) {
-	if config.GlobalConfig.AppriseApiServer == "" {
+	if config.GlobalConfig.AppriseAPIServer == "" {
 		return
-	} else if len(config.GlobalConfig.RecipientUrl) == 0 {
+	} else if len(config.GlobalConfig.RecipientURL) == 0 {
 		slog.Error("没有配置通知目标")
 		return
 	}
 
-	for _, url := range config.GlobalConfig.RecipientUrl {
+	for _, url := range config.GlobalConfig.RecipientURL {
 		request := NotifyRequest{
 			URLs: url,
 			Body: fmt.Sprintf("✅ 可用节点：%d\n🕒 %s",
