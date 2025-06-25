@@ -15,9 +15,13 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+// Version 应用程序版本号
 var Version = "unknown"
+
+// CurrentCommit 当前Git提交哈希
 var CurrentCommit = "unknown"
 
+// TempLog 临时日志文件路径
 var TempLog string
 
 func init() {
