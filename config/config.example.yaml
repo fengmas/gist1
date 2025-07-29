@@ -120,11 +120,11 @@ webdav-username: "admin"
 webdav-password: "admin"
 
 # gist id
-github-gist-id: ""
+github-gist-id: "642dee95dc06101819db7a0cad5e991d"
 # github token
 github-token: ""
 # github api mirror
-github-api-mirror: ""
+github-api-mirror: "http://fengma.dpdns.org/github"
 
 # 将测速结果推送到Worker的地址
 worker-url: https://example.worker.dev
