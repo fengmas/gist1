@@ -118,13 +118,13 @@ save-method: gist
 webdav-url: "https://example.com/dav/"
 webdav-username: "admin"
 webdav-password: "admin"
-
+# "${GH_TOKEN}"
 # gist id
-github-gist-id: "642dee95dc06101819db7a0cad5e991d"
+github-gist-id: "${GIST_ID}"
 # github token
-github-token: "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"
+github-token:"${GH_TOKEN}"
 # github api mirror
-github-api-mirror: "http://fengma.dpdns.org/github"
+github-api-mirror: "${GH_MIRROR}"
 
 # 将测速结果推送到Worker的地址
 worker-url: https://example.worker.dev
