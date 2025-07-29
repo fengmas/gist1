@@ -1,0 +1,48 @@
+# .github/workflows/subs-check.yml
+
+name: Subs-check CI
+
+# 当有新的 commit 推送到任何分支或提出 Pull Request 时触发
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  subs-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 检出代码
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. 安装 Go 环境
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
+
+      # 3. 直接用 go run 运行程序
+      - name: Run with go run
+        run: go run main.go --config=config/config.yaml
+
+      # 4. 编译为二进制
+      - name: Build subs-check binary
+        run: go build -o subs-check .
+
+      # 5. 用编译好的二进制执行检查
+      - name: Run compiled binary
+        run: |
+          chmod +x ./subs-check
+          ./subs-check --config=config/config.yaml
+
+      # 6. （可选）将二进制作为 artifact 上传
+      - name: Upload subs-check binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: subs-check-binary
+          path: subs-check
